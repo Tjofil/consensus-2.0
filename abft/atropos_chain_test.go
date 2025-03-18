@@ -42,3 +42,41 @@ func testRegressionData(t *testing.T, dbPath string) {
 		}
 	}
 }
+
+func benchmarkElection(b *testing.B, dbPath string) {
+	conn, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer conn.Close()
+
+	epochMin, epochMax, err := GetEpochRange(conn)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+    b.ResetTimer()
+
+	for range b.N {
+	    for epoch := epochMin; epoch <= epochMax; epoch++ {
+            b.StopTimer()
+            testLachesis, eventStore, _, orderedEvents, err := SetupElection(conn, epoch);
+            if err != nil {
+                b.Fatal(err)
+            }
+
+            b.StartTimer()
+            if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
+		        b.Fatal(err)
+            }
+        }
+    }
+}
+
+func BenchmarkElectionFantom(b *testing.B) {
+	benchmarkElection(b, "testdata/events-5577.db")
+}
+
+func BenchmarkElectionSonic(b *testing.B) {
+	benchmarkElection(b, "testdata/events-8000-partial.db")
+}

@@ -22,17 +22,41 @@ import (
 	"github.com/0xsoniclabs/consensus/lachesis"
 )
 
-func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
+func SetupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, map[hash.Event]*dbEvent, []*dbEvent, error) {
 	validators, weights, err := getValidator(conn, epoch)
 	if err != nil {
-		return err
+		return nil, nil, nil, nil, err
 	}
 	if len(validators) == 0 {
-		return nil
+		return nil, nil, nil, nil, nil
 	}
+
 	testLachesis, _, eventStore, _ := NewCoreLachesis(validators, weights)
-	// Plant the real epoch state for the sake of event hash calculation (epoch=1 by default)
 	testLachesis.store.switchGenesis(&Genesis{Epoch: epoch, Validators: testLachesis.store.GetValidators()})
+
+	eventsOrdered, eventMap, err := getEvents(conn, epoch)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+    return testLachesis, eventStore, eventMap, eventsOrdered, nil
+}
+
+func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
+	for _, event := range eventsOrdered {
+		if err := IngestEvent(testLachesis, eventStore, event); err != nil {
+			return err
+		}
+	}
+
+    return nil
+}
+
+func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
+    testLachesis, eventStore, eventMap, orderedEvents, err := SetupElection(conn, epoch);
+    if err != nil {
+        return err
+    }
 
 	recalculatedAtropoi := make([]hash.Event, 0)
 	// Capture the elected atropoi by planting the `applyBlock` callback (nil by default)
@@ -41,16 +65,9 @@ func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
 		return nil
 	}
 
-	eventsOrdered, eventMap, err := getEvents(conn, epoch)
-	if err != nil {
-		return err
-	}
-	// Ingesting by lamport ts guarantees that all parents are already ingested
-	for _, event := range eventsOrdered {
-		if err := ingestEvent(testLachesis, eventStore, event); err != nil {
-			return err
-		}
-	}
+    if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
+        return err
+    }
 
 	expectedAtropoi, err := getAtropoi(conn, epoch)
 	if err != nil {
@@ -89,7 +106,7 @@ func GetEpochRange(conn *sql.DB) (idx.Epoch, idx.Epoch, error) {
 	return epochMin, epochMax, nil
 }
 
-func ingestEvent(testLachesis *CoreLachesis, eventStore *EventStore, event *dbEvent) error {
+func IngestEvent(testLachesis *CoreLachesis, eventStore *EventStore, event *dbEvent) error {
 	testEvent := &tdag.TestEvent{}
 	testEvent.SetSeq(event.seq)
 	testEvent.SetCreator(event.validatorId)
