@@ -44,7 +44,7 @@ func SetupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, m
 
 func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
 	for _, event := range eventsOrdered {
-		if err := IngestEvent(testLachesis, eventStore, event); err != nil {
+		if err := ingestEvent(testLachesis, eventStore, event); err != nil {
 			return err
 		}
 	}
@@ -106,7 +106,7 @@ func GetEpochRange(conn *sql.DB) (idx.Epoch, idx.Epoch, error) {
 	return epochMin, epochMax, nil
 }
 
-func IngestEvent(testLachesis *CoreLachesis, eventStore *EventStore, event *dbEvent) error {
+func ingestEvent(testLachesis *CoreLachesis, eventStore *EventStore, event *dbEvent) error {
 	testEvent := &tdag.TestEvent{}
 	testEvent.SetSeq(event.seq)
 	testEvent.SetCreator(event.validatorId)
