@@ -68,13 +68,13 @@ func benchmarkElection(b *testing.B, dbPath string) {
 	for range b.N {
 		for epoch := epochMin; epoch <= epochMax; epoch++ {
 			b.StopTimer()
-			testLachesis, eventStore, _, orderedEvents, err := SetupElection(conn, epoch)
+			testLachesis, eventStore, _, orderedEvents, err := setupElection(conn, epoch)
 			if err != nil {
 				b.Fatal(err)
 			}
 
 			b.StartTimer()
-			if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
+			if err := executeElection(testLachesis, eventStore, orderedEvents); err != nil {
 				b.Fatal(err)
 			}
 		}

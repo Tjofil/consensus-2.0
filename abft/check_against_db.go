@@ -22,7 +22,7 @@ import (
 	"github.com/0xsoniclabs/consensus/lachesis"
 )
 
-func SetupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, map[hash.Event]*dbEvent, []*dbEvent, error) {
+func setupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, map[hash.Event]*dbEvent, []*dbEvent, error) {
 	validators, weights, err := getValidator(conn, epoch)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -42,7 +42,7 @@ func SetupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, m
 	return testLachesis, eventStore, eventMap, eventsOrdered, nil
 }
 
-func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
+func executeElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
 	for _, event := range eventsOrdered {
 		if err := ingestEvent(testLachesis, eventStore, event); err != nil {
 			return err
@@ -53,7 +53,7 @@ func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsO
 }
 
 func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
-	testLachesis, eventStore, eventMap, orderedEvents, err := SetupElection(conn, epoch)
+	testLachesis, eventStore, eventMap, orderedEvents, err := setupElection(conn, epoch)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
 		return nil
 	}
 
-	if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
+	if err := executeElection(testLachesis, eventStore, orderedEvents); err != nil {
 		return err
 	}
 
