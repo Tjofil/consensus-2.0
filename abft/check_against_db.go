@@ -39,7 +39,7 @@ func SetupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, m
 		return nil, nil, nil, nil, err
 	}
 
-    return testLachesis, eventStore, eventMap, eventsOrdered, nil
+	return testLachesis, eventStore, eventMap, eventsOrdered, nil
 }
 
 func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
@@ -49,14 +49,14 @@ func ExecuteElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsO
 		}
 	}
 
-    return nil
+	return nil
 }
 
 func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
-    testLachesis, eventStore, eventMap, orderedEvents, err := SetupElection(conn, epoch);
-    if err != nil {
-        return err
-    }
+	testLachesis, eventStore, eventMap, orderedEvents, err := SetupElection(conn, epoch)
+	if err != nil {
+		return err
+	}
 
 	recalculatedAtropoi := make([]hash.Event, 0)
 	// Capture the elected atropoi by planting the `applyBlock` callback (nil by default)
@@ -65,9 +65,9 @@ func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
 		return nil
 	}
 
-    if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
-        return err
-    }
+	if err := ExecuteElection(testLachesis, eventStore, orderedEvents); err != nil {
+		return err
+	}
 
 	expectedAtropoi, err := getAtropoi(conn, epoch)
 	if err != nil {
