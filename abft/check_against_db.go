@@ -22,17 +22,41 @@ import (
 	"github.com/0xsoniclabs/consensus/lachesis"
 )
 
-func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
+func setupElection(conn *sql.DB, epoch idx.Epoch) (*CoreLachesis, *EventStore, map[hash.Event]*dbEvent, []*dbEvent, error) {
 	validators, weights, err := getValidator(conn, epoch)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	if len(validators) == 0 {
+		return nil, nil, nil, nil, nil
+	}
+
+	testLachesis, _, eventStore, _ := NewCoreLachesis(validators, weights)
+	testLachesis.store.switchGenesis(&Genesis{Epoch: epoch, Validators: testLachesis.store.GetValidators()})
+
+	eventsOrdered, eventMap, err := getEvents(conn, epoch)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return testLachesis, eventStore, eventMap, eventsOrdered, nil
+}
+
+func executeElection(testLachesis *CoreLachesis, eventStore *EventStore, eventsOrdered []*dbEvent) error {
+	for _, event := range eventsOrdered {
+		if err := ingestEvent(testLachesis, eventStore, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
+	testLachesis, eventStore, eventMap, orderedEvents, err := setupElection(conn, epoch)
 	if err != nil {
 		return err
 	}
-	if len(validators) == 0 {
-		return nil
-	}
-	testLachesis, _, eventStore, _ := NewCoreLachesis(validators, weights)
-	// Plant the real epoch state for the sake of event hash calculation (epoch=1 by default)
-	testLachesis.store.switchGenesis(&Genesis{Epoch: epoch, Validators: testLachesis.store.GetValidators()})
 
 	recalculatedAtropoi := make([]hash.Event, 0)
 	// Capture the elected atropoi by planting the `applyBlock` callback (nil by default)
@@ -41,15 +65,8 @@ func CheckEpochAgainstDB(conn *sql.DB, epoch idx.Epoch) error {
 		return nil
 	}
 
-	eventsOrdered, eventMap, err := getEvents(conn, epoch)
-	if err != nil {
+	if err := executeElection(testLachesis, eventStore, orderedEvents); err != nil {
 		return err
-	}
-	// Ingesting by lamport ts guarantees that all parents are already ingested
-	for _, event := range eventsOrdered {
-		if err := ingestEvent(testLachesis, eventStore, event); err != nil {
-			return err
-		}
 	}
 
 	expectedAtropoi, err := getAtropoi(conn, epoch)
