@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/0xsoniclabs/consensus/abft"
-	"github.com/0xsoniclabs/consensus/inter/idx"
+	"github.com/0xsoniclabs/consensus/consensus"
+	"github.com/0xsoniclabs/consensus/consensus/consensusengine"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/urfave/cli/v2"
 )
@@ -62,22 +62,22 @@ func run(ctx *cli.Context) error {
 		return err
 	}
 
-	epochMin, epochMax, err := abft.GetEpochRange(conn)
+	epochMin, epochMax, err := consensusengine.GetEpochRange(conn)
 	if err != nil {
 		return err
 	}
 	if ctx.IsSet(EpochMinFlag.Name) {
-		epochMin = max(epochMin, idx.Epoch(ctx.Uint(EpochMinFlag.Name)))
+		epochMin = max(epochMin, consensus.Epoch(ctx.Uint(EpochMinFlag.Name)))
 	}
 	if ctx.IsSet(EpochMaxFlag.Name) {
-		epochMax = min(epochMax, idx.Epoch(ctx.Uint(EpochMaxFlag.Name)))
+		epochMax = min(epochMax, consensus.Epoch(ctx.Uint(EpochMaxFlag.Name)))
 	}
 	if epochMin > epochMax {
 		return fmt.Errorf("invalid range of epochs requested: [%d, %d]", epochMin, epochMax)
 	}
 
 	for epoch := epochMin; epoch <= epochMax; epoch++ {
-		if err := abft.CheckEpochAgainstDB(conn, epoch); err != nil {
+		if err := consensusengine.CheckEpochAgainstDB(conn, epoch); err != nil {
 			return err
 		}
 	}
