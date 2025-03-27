@@ -8,12 +8,16 @@
 // On the date above, in accordance with the Business Source License, use of
 // this software will be governed by the GNU Lesser General Public License v3.
 
-package consensus
+package consensustest
 
 import (
 	"crypto/sha256"
 	"fmt"
 	"math/rand"
+
+	"github.com/0xsoniclabs/consensus/consensus"
+	"github.com/0xsoniclabs/consensus/utils/byteutils"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // GenNodes generates nodes.
@@ -22,15 +26,15 @@ import (
 func GenNodes(
 	nodeCount int,
 ) (
-	nodes []ValidatorID,
+	nodes []consensus.ValidatorID,
 ) {
 	// init results
-	nodes = make([]ValidatorID, nodeCount)
+	nodes = make([]consensus.ValidatorID, nodeCount)
 	// make and name nodes
 	for i := 0; i < nodeCount; i++ {
 		addr := FakePeer()
 		nodes[i] = addr
-		SetNodeName(addr, "node"+string('A'+rune(i)))
+		consensus.SetNodeName(addr, "node"+string('A'+rune(i)))
 	}
 
 	return
@@ -41,15 +45,15 @@ func GenNodes(
 //   - callbacks are called for each new event;
 //   - events maps node address to array of its events;
 func ForEachRandFork(
-	nodes []ValidatorID,
-	cheatersArr []ValidatorID,
+	nodes []consensus.ValidatorID,
+	cheatersArr []consensus.ValidatorID,
 	eventCount int,
 	parentCount int,
 	forksCount int,
 	r *rand.Rand,
 	callback ForEachEvent,
 ) (
-	events map[ValidatorID]Events,
+	events map[consensus.ValidatorID]consensus.Events,
 ) {
 	if r == nil {
 		// fixed seed
@@ -57,8 +61,8 @@ func ForEachRandFork(
 	}
 	// init results
 	nodeCount := len(nodes)
-	events = make(map[ValidatorID]Events, nodeCount)
-	cheaters := map[ValidatorID]int{}
+	events = make(map[consensus.ValidatorID]consensus.Events, nodeCount)
+	cheaters := map[consensus.ValidatorID]int{}
 	for _, cheater := range cheatersArr {
 		cheaters[cheater] = 0
 	}
@@ -79,9 +83,9 @@ func ForEachRandFork(
 		// make
 		e := &TestEvent{}
 		e.SetCreator(creator)
-		e.SetParents(EventHashes{})
+		e.SetParents(consensus.EventHashes{})
 		// first parent is a last creator's event or empty hash
-		var parent Event
+		var parent consensus.Event
 		if ee := events[creator]; len(ee) > 0 {
 			parent = ee[len(ee)-1]
 
@@ -130,7 +134,7 @@ func ForEachRandFork(
 		var id [24]byte
 		copy(id[:], hasher.Sum(nil)[:24])
 		e.SetID(id)
-		SetEventName(e.ID(), fmt.Sprintf("%s%03d", string('a'+rune(self)), len(events[creator])))
+		consensus.SetEventName(e.ID(), fmt.Sprintf("%s%03d", string('a'+rune(self)), len(events[creator])))
 		events[creator] = append(events[creator], e)
 		// callback
 		if callback.Process != nil {
@@ -146,27 +150,27 @@ func ForEachRandFork(
 //   - callbacks are called for each new event;
 //   - events maps node address to array of its events;
 func ForEachRandEvent(
-	nodes []ValidatorID,
+	nodes []consensus.ValidatorID,
 	eventCount int,
 	parentCount int,
 	r *rand.Rand,
 	callback ForEachEvent,
 ) (
-	events map[ValidatorID]Events,
+	events map[consensus.ValidatorID]consensus.Events,
 ) {
-	return ForEachRandFork(nodes, []ValidatorID{}, eventCount, parentCount, 0, r, callback)
+	return ForEachRandFork(nodes, []consensus.ValidatorID{}, eventCount, parentCount, 0, r, callback)
 }
 
 // GenRandEvents generates random events for test purpose.
 // Result:
 //   - events maps node address to array of its events;
 func GenRandEvents(
-	nodes []ValidatorID,
+	nodes []consensus.ValidatorID,
 	eventCount int,
 	parentCount int,
 	r *rand.Rand,
 ) (
-	events map[ValidatorID]Events,
+	events map[consensus.ValidatorID]consensus.Events,
 ) {
 	return ForEachRandEvent(nodes, eventCount, parentCount, r, ForEachEvent{})
 }
@@ -179,9 +183,55 @@ func CalcHashForTestEvent(event *TestEvent) [24]byte {
 	return id
 }
 
-func delPeerIndex(events map[ValidatorID]Events) (res Events) {
+func delPeerIndex(events map[consensus.ValidatorID]consensus.Events) (res consensus.Events) {
 	for _, ee := range events {
 		res = append(res, ee...)
+	}
+	return
+}
+
+// FakePeer generates random fake peer id for testing purpose.
+func FakePeer() consensus.ValidatorID {
+	return consensus.BytesToValidatorID(FakeHash().Bytes()[:4])
+}
+
+// FakeEpoch gives fixed value of fake epoch for testing purpose.
+func FakeEpoch() consensus.Epoch {
+	return 123456
+}
+
+// FakeEventHash generates random fake event hash with the same epoch for testing purpose.
+func FakeEventHash() (h consensus.EventHash) {
+	_, err := rand.Read(h[:]) // nolint:gosec
+	if err != nil {
+		panic(err)
+	}
+	copy(h[0:4], byteutils.Uint32ToBigEndian(uint32(FakeEpoch())))
+	return
+}
+
+// FakeEventHashes generates random hashes of fake event with the same epoch for testing purpose.
+func FakeEventHashes(n int) consensus.EventHashes {
+	res := consensus.EventHashes{}
+	for i := 0; i < n; i++ {
+		res.Add(FakeEventHash())
+	}
+	return res
+}
+
+// FakeHash generates random fake hash for testing purpose.
+func FakeHash(seed ...int64) (h common.Hash) {
+	randRead := rand.Read
+
+	if len(seed) > 0 {
+		src := rand.NewSource(seed[0])
+		rnd := rand.New(src) // nolint:gosec
+		randRead = rnd.Read
+	}
+
+	_, err := randRead(h[:])
+	if err != nil {
+		panic(err)
 	}
 	return
 }

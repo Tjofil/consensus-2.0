@@ -8,14 +8,18 @@
 // On the date above, in accordance with the Business Source License, use of
 // this software will be governed by the GNU Lesser General Public License v3.
 
-package consensus
+package consensustest
+
+import (
+	"github.com/0xsoniclabs/consensus/consensus"
+)
 
 type TestEvent struct {
-	MutableBaseEvent
+	consensus.MutableBaseEvent
 	Name string
 }
 
-func (e *TestEvent) AddParent(id EventHash) {
+func (e *TestEvent) AddParent(id consensus.EventHash) {
 	parents := e.Parents()
 	parents.Add(id)
 	e.SetParents(parents)
