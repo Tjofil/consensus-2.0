@@ -9,8 +9,12 @@
 # this software will be governed by the GNU Lesser General Public License v3.
 
 
-all: conf-tester
+all: conf-tester tester
 
+tester:
+	$(MAKE) -C ./test
+
+.PHONY: clean
 clean: 
 	rm -f conf-tester driver.o lachesis.o gen_input.o gen_eventdb.o
 

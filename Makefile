@@ -8,6 +8,11 @@
 # On the date above, in accordance with the Business Source License, use of
 # this software will be governed by the GNU Lesser General Public License v3.
 
+all: conf_tester dbchecker
+
+conf_tester:
+	$(MAKE) -C ./cmd/conf_tester/test
+
 dbchecker:
 	go build -ldflags="-s -w" -o build/dbchecker ./cmd/dbchecker
 
@@ -27,6 +32,8 @@ coverage:
 .PHONY : clean
 clean :
 	rm -fr ./build/*
+	rm -f ./cmd/conf_tester/test/test
+	
 
 .PHONY : lint
 lint:
