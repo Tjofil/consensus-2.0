@@ -14,6 +14,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <cstdint>
+#include <cstring>
+
 
 using namespace std;
 

@@ -7,6 +7,18 @@
 #
 # On the date above, in accordance with the Business Source License, use of
 # this software will be governed by the GNU Lesser General Public License v3.
+#
+
+CXX = g++
+FLAGS = -Wall -O3 --std=c++17
+SRC = ./cmd/conf_tester/gen_eventdb.cpp ./cmd/conf_tester/lachesis.cpp ./cmd/conf_tester/gen_input.cpp ./cmd/conf_tester/driver.cpp
+HPP =./cmd/conf_tester/generator.h ./cmd/conf_tester/lachesis.h 
+TARGET = ./cmd/conf_tester/conf_tester
+
+all: conf_tester dbchecker
+
+conf_tester: $(SRC) $(HPP)
+	$(CXX) $(FLAGS) -o $(TARGET) $(SRC) -lsqlite3
 
 dbchecker:
 	go build -ldflags="-s -w" -o build/dbchecker ./cmd/dbchecker
@@ -27,6 +39,9 @@ coverage:
 .PHONY : clean
 clean :
 	rm -fr ./build/*
+	rm -f $(TARGET) 
+	rm -f ./cmd/conf_tester/*.o
+	
 
 .PHONY : lint
 lint:
