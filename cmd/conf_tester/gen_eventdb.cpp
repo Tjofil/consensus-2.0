@@ -92,9 +92,9 @@ inline void getValidatorStake(sqlite3 *db, int epoch,
 
 // parent data structure
 struct parent {
-  int64_t parent_id;
-  int validator_id;
-  int sequence_number;
+  int64_t parent_id = 0;
+  int validator_id = 0;
+  int sequence_number = 0;
 };
 
 // getParents retrieves parents of an event from the event-db
@@ -246,9 +246,9 @@ int EventDbGenerator::process(int argc, char *argv[]) {
 
       // get first event-id in set
       string event_hash;
-      int frame_id;
-      int validator_id;
-      int seq_num;
+      int frame_id = 0;
+      int validator_id = 0;
+      int seq_num = 0;
 
       // read event
       getEvent(db, event_id, event_hash, frame_id, validator_id, seq_num);
@@ -343,8 +343,8 @@ int EventDbGenerator::process(int argc, char *argv[]) {
       }
 
       // check
-      int atropos_validator;
-      int atropos_seqnum;
+      int atropos_validator = 0;
+      int atropos_seqnum = 0;
       if (checkAtroposEvent(db, event_id, atropos_validator, atropos_seqnum)) {
         int atropos_id = proc_map[atropos_validator];
         atropos_seqnum--;
