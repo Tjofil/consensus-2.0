@@ -10,7 +10,7 @@
 #
 
 CXX = g++
-FLAGS = -O3 -Wall --std=c++17
+FLAGS = -Wall -O3 --std=c++17
 SRC = ./cmd/conf_tester/gen_eventdb.cpp ./cmd/conf_tester/lachesis.cpp ./cmd/conf_tester/gen_input.cpp ./cmd/conf_tester/driver.cpp
 HPP =./cmd/conf_tester/generator.h ./cmd/conf_tester/lachesis.h 
 TARGET = ./cmd/conf_tester/conf_tester
