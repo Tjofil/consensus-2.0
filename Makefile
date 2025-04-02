@@ -29,10 +29,16 @@ conf_tester_tests: $(TEST_SRC) $(TEST_HPP)
 dbchecker:
 	go build -ldflags="-s -w" -o build/dbchecker ./cmd/dbchecker
 
-.PHONY : test
-test :
+.PHONY : test-go
+test-go : 
 	go test -shuffle=on ./...
+	
+.PHONY : test-conf
+test-conf : conf_tester conf_tester_tests
 	$(TEST_TARGET)
+
+.PHONY : test
+test : test-go test-conf
 
 .PHONY : test-race
 test-race :
@@ -51,20 +57,29 @@ clean :
 	rm  -f $(TEST_TARGET)
 	rm -f ./cmd/conf_tester/test/*.g
 	
-.PHONY : lint
-lint:
-	@./build/bin/golangci-lint run --config ./.golangci.yml
+# Linting
 
-.PHONY : lintci-deps
-lintci-deps:
-	rm -f ./build/bin/golangci-lint
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./build/bin v1.52.2
+.PHONY: vet
+vet: 
+	go vet ./...
 
-.PHONY : install-deps
-install-deps:
-	go get github.com/JekaMas/go-mutesting/cmd/go-mutesting@v1.1.2
+STATICCHECK_VERSION = 2025.1
+.PHONY: staticcheck
+staticcheck: 
+	@go install honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION)
+	staticcheck ./...
 
-.PHONY : mut
-mut:
-	MUTATION_TEST=on go-mutesting --blacklist=".github/mut_blacklist" --config=".github/mut_config.yml" ./... &> .stats.msi
-	@echo MSI: `jq '.stats.msi' report.json`
+ERRCHECK_VERSION = v1.9.0
+.PHONY: errcheck
+errorcheck:
+	@go install github.com/kisielk/errcheck@$(ERRCHECK_VERSION)
+	errcheck ./...
+
+DEADCODE_VERSION = v0.31.0
+.PHONY: deadcode
+deadcode:
+	@go install golang.org/x/tools/cmd/deadcode@$(DEADCODE_VERSION)
+	deadcode -test ./...
+
+.PHONY: lint
+lint: vet staticcheck errorcheck deadcode
