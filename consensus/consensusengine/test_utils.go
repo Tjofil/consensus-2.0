@@ -11,11 +11,11 @@
 package consensusengine
 
 import (
+	"github.com/0xsoniclabs/consensus/dagindexer"
+
 	"github.com/0xsoniclabs/consensus/consensus"
 	"github.com/0xsoniclabs/consensus/consensus/consensusstore"
 	"github.com/0xsoniclabs/consensus/consensus/consensustest"
-	"github.com/0xsoniclabs/consensus/vecengine"
-
 	"github.com/0xsoniclabs/consensus/utils/adapters"
 	"github.com/0xsoniclabs/kvdb/memorydb"
 )
@@ -69,7 +69,7 @@ func NewCoreLachesis(nodes []consensus.ValidatorID, weights []consensus.Weight, 
 	crit := func(err error) {
 		panic(err)
 	}
-	dagIndexer := &adapters.VectorToDagIndexer{Engine: vecengine.NewIndex(crit, vecengine.LiteConfig(), vecengine.GetEngineCallbacks)}
+	dagIndexer := &adapters.VectorToDagIndexer{Index: dagindexer.NewIndex(crit, dagindexer.LiteConfig())}
 	lch := NewIndexedLachesis(store, input, dagIndexer, crit, config)
 
 	extended := &CoreLachesis{

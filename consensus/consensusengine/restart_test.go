@@ -18,7 +18,7 @@ import (
 	"github.com/0xsoniclabs/consensus/consensus"
 	"github.com/0xsoniclabs/consensus/consensus/consensusstore"
 	"github.com/0xsoniclabs/consensus/consensus/consensustest"
-	"github.com/0xsoniclabs/consensus/vecengine"
+	"github.com/0xsoniclabs/consensus/dagindexer"
 
 	"github.com/stretchr/testify/assert"
 
@@ -191,7 +191,7 @@ func testRestartAndReset(t *testing.T, weights []consensus.Weight, mutateWeights
 				return memorydb.New()
 			}
 
-			restored := NewIndexedLachesis(store, prev.Input, &adapters.VectorToDagIndexer{Engine: vecengine.NewIndex(prev.crit, vecengine.LiteConfig(), vecengine.GetEngineCallbacks)}, prev.crit, prev.config)
+			restored := NewIndexedLachesis(store, prev.Input, &adapters.VectorToDagIndexer{Index: dagindexer.NewIndex(prev.crit, dagindexer.LiteConfig())}, prev.crit, prev.config)
 			assertar.NoError(restored.Bootstrap(prev.callback))
 
 			lchs[RESTORED].IndexedLachesis = restored

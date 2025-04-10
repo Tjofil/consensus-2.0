@@ -19,7 +19,6 @@ import (
 	"github.com/0xsoniclabs/consensus/consensus/consensusstore"
 	"github.com/0xsoniclabs/consensus/dagidx"
 	"github.com/0xsoniclabs/kvdb"
-	"github.com/0xsoniclabs/kvdb/flushable"
 )
 
 var _ consensus.Consensus = (*IndexedLachesis)(nil)
@@ -42,7 +41,7 @@ type DagIndexer interface {
 	Flush()
 	DropNotFlushed()
 
-	Reset(validators *consensus.Validators, db kvdb.FlushableKVStore, getEvent func(consensus.EventHash) consensus.Event)
+	Reset(validators *consensus.Validators, db kvdb.Store, getEvent func(consensus.EventHash) consensus.Event)
 }
 
 // NewIndexedLachesis creates IndexedLachesis instance.
@@ -97,7 +96,7 @@ func (p *IndexedLachesis) Bootstrap(callback consensus.ConsensusCallbacks) error
 			if base.EpochDBLoaded != nil {
 				base.EpochDBLoaded(epoch)
 			}
-			p.DagIndexer.Reset(p.store.GetValidators(), flushable.Wrap(p.store.EpochTable.VectorIndex), p.Input.GetEvent)
+			p.DagIndexer.Reset(p.store.GetValidators(), p.store.EpochTable.VectorIndex, p.Input.GetEvent)
 		},
 	}
 	return p.Lachesis.BootstrapWithOrderer(callback, ordererCallbacks)
