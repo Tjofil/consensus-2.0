@@ -116,9 +116,7 @@ func ForEachRandFork(
 				if ee := events[nodes[other]]; len(ee) > 0 {
 					parent := ee[len(ee)-1]
 					e.AddParent(parent.ID())
-					if e.Lamport() <= parent.Lamport() {
-						e.SetLamport(parent.Lamport() + 1)
-					}
+					e.SetLamport(consensus.MaxLamport(e.Lamport(), parent.Lamport()+1))
 				}
 			}
 		}
