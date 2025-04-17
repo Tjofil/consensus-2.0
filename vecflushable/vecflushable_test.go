@@ -242,3 +242,254 @@ func tempLevelDB() (kvdb.Store, error) {
 	ldb, _ := disk.OpenDB("0")
 	return ldb, nil
 }
+
+func TestNilParentWrap(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+	_ = Wrap(nil, 1000)
+}
+
+func TestNilPut(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	err := vecflushable.Put([]byte("a"), nil)
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+	err = vecflushable.Put(nil, []byte("a"))
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestHasInModified(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	key := byteutils.Uint64ToBigEndian(uint64(0))
+	val := byteutils.Uint64ToBigEndian(uint64(1))
+
+	if err := vecflushable.Put(key, val); err != nil {
+		t.Error(err)
+	}
+
+	has, err := vecflushable.Has(key)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, has)
+
+	has, err = vecflushable.Has(byteutils.Uint64ToBigEndian(uint64(2)))
+	if err != nil {
+		t.Error(err)
+	}
+	assert.False(t, has)
+}
+
+func TestHasInBacked(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	key := byteutils.Uint64ToBigEndian(uint64(0))
+	val := byteutils.Uint64ToBigEndian(uint64(1))
+
+	if err := vecflushable.Put(key, val); err != nil {
+		t.Error(err)
+	}
+	// Force contents to underlying
+	vecflushable.Flush()
+
+	has, err := vecflushable.Has(key)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, has)
+
+	has, err = vecflushable.Has(byteutils.Uint64ToBigEndian(uint64(2)))
+	if err != nil {
+		t.Error(err)
+	}
+	assert.False(t, has)
+}
+
+func TestHasClosed(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	key := byteutils.Uint64ToBigEndian(uint64(0))
+	val := byteutils.Uint64ToBigEndian(uint64(1))
+
+	if err := vecflushable.Put(key, val); err != nil {
+		t.Error(err)
+	}
+
+	vecflushable.Close()
+
+	has, err := vecflushable.Has(key)
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+	assert.False(t, has)
+}
+
+func TestGetClosed(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	key := byteutils.Uint64ToBigEndian(uint64(0))
+	val := byteutils.Uint64ToBigEndian(uint64(1))
+
+	if err := vecflushable.Put(key, val); err != nil {
+		t.Error(err)
+	}
+
+	vecflushable.Close()
+
+	v, err := vecflushable.Get(key)
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+	assert.Nil(t, v)
+}
+
+func TestFlushClosed(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	key := byteutils.Uint64ToBigEndian(uint64(0))
+	val := byteutils.Uint64ToBigEndian(uint64(1))
+
+	if err := vecflushable.Put(key, val); err != nil {
+		t.Error(err)
+	}
+
+	vecflushable.Close()
+
+	err := vecflushable.Flush()
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestCloseClosed(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	vecflushable.Close()
+
+	err := vecflushable.Close()
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestUnimplementedDrop(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.Drop()
+
+}
+
+func TestUnimplementedAncientDatadir(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.AncientDatadir()
+
+}
+
+func TestUnimplementedDelete(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.Delete([]byte("a"))
+}
+
+func TestUnimplementedGetSnapshot(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.GetSnapshot()
+}
+
+func TestUnimplementedNewIterator(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.NewIterator([]byte("a"), []byte("b"))
+}
+
+func TestUnimplementedStat(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.Stat()
+}
+
+func TestUnimplementedCompact(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.Compact([]byte("a"), []byte("b"))
+}
+
+func TestUnimplementedNewBatch(t *testing.T) {
+	backupDB, _ := tempLevelDB()
+	vecflushable := Wrap(backupDB, 1000)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, got nil")
+		}
+	}()
+
+	vecflushable.NewBatch()
+}
