@@ -65,7 +65,7 @@ func testConfirmBlocks(t *testing.T, weights []consensus.Weight, cheatersCount i
 	assertar := assert.New(t)
 
 	nodes := consensustest.GenNodes(len(weights))
-	lch, _, input, _ := NewCoreLachesis(nodes, weights)
+	lch, _, input, _ := NewBootstrappedCoreConsensus(nodes, weights)
 
 	var (
 		frames []consensus.Frame
