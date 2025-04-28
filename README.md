@@ -7,4 +7,4 @@ A base library that defines interfaces and modules of the consensus protocol.
 To build testing tooling type `make all`. Consult the Makefile for individual build options.
 
 ### Testing
-to test type `make test'. Consult the Makefile for individual optoins.
+To test, type `make test'. Consult the Makefile for individual options.
