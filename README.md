@@ -1,23 +1,10 @@
 [![codecov](https://codecov.io/gh/0xsoniclabs/consensus/graph/badge.svg?token=4YGWLYH1QX)](https://codecov.io/gh/0xsoniclabs/consensus)
 
 # Sonic Consensus
-
-A base library defines interfaces and modules of aBFT Lachesis consensus protocol.
-Part of Sonic's Consensus-as-a-Service for distributed applications.
+A base library that defines interfaces and modules of the consensus protocol.
 
 ## Build Details
-
-## Building the source
-
-### Running Lachesis
-
-### Docker
-
-## Dev
-
-### Running testnet
+To build testing tooling, type `make all`. Consult the Makefile for individual build options.
 
 ### Testing
-
-### Running the demo
-
+To test, type `make test'. Consult the Makefile for individual options.
