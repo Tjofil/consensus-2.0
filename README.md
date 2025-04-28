@@ -8,4 +8,3 @@ To build testing tooling type `make all`. Consult the Makefile for individual bu
 
 ### Testing
 to test type `make test'. Consult the Makefile for individual optoins.
-
